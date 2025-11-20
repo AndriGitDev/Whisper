@@ -1,0 +1,189 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&display=swap');
+
+:root {
+  --bg-color: #050505;
+  --text-color: #e0e0e0;
+  --primary-color: #00ff9d;
+  --secondary-color: #00b8ff;
+  --accent-color: #ff0055;
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --font-main: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-main);
+  overflow-x: hidden;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at 50% 0%, #00ff9d15 0%, transparent 50%),
+    radial-gradient(circle at 80% 50%, #00b8ff10 0%, transparent 50%);
+  animation: bg-pulse 10s ease-in-out infinite alternate;
+}
+
+@keyframes bg-pulse {
+  0% {
+    background-position: 0% 0%;
+  }
+
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+/* Animated Background Shapes */
+.bg-shape {
+  position: absolute;
+  filter: blur(80px);
+  z-index: -1;
+  opacity: 0.4;
+  animation: float 20s infinite;
+}
+
+.bg-shape-1 {
+  top: -10%;
+  left: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, var(--primary-color) 0%, transparent 70%);
+  animation-delay: 0s;
+}
+
+.bg-shape-2 {
+  bottom: -10%;
+  right: -10%;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, var(--secondary-color) 0%, transparent 70%);
+  animation-delay: -10s;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  33% {
+    transform: translate(30px, 50px) rotate(10deg);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) rotate(-5deg);
+  }
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Futuristic Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* Utilities */
+.glass-panel {
+  background: rgba(10, 10, 10, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+.neon-text {
+  text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+}
+
+.neon-border {
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* Custom Component Classes to ensure consistency */
+.whisper-input {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-size: 1.125rem;
+  font-family: var(--font-mono);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--glass-border);
+  color: var(--text-color);
+  border-radius: 0.75rem;
+  outline: none;
+  transition: all 0.3s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.whisper-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 15px rgba(0, 255, 157, 0.1);
+}
+
+.whisper-button {
+  width: 100%;
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.whisper-button:disabled {
+  background: rgba(31, 41, 55, 0.5);
+  color: #4b5563;
+  cursor: not-allowed;
+  border: 1px solid rgba(31, 41, 55, 1);
+  box-shadow: none;
+}
+
+.whisper-button:not(:disabled) {
+  background-color: var(--primary-color);
+  color: black;
+  box-shadow: 0 0 30px rgba(0, 255, 157, 0.4);
+}
+
+.whisper-button:not(:disabled):hover {
+  box-shadow: 0 0 50px rgba(0, 255, 157, 0.6);
+  transform: scale(1.01);
+}
