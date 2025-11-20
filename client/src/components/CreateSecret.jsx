@@ -46,7 +46,7 @@ const CreateSecret = () => {
             }
         } catch (error) {
             console.error("Failed to create secret:", error);
-            alert("Failed to create secret. Please try again.");
+            alert(`Failed to create secret: ${error.message}. \n\nIf you just updated the code, try restarting your dev server.`);
         } finally {
             setLoading(false);
         }
