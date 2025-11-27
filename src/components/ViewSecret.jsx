@@ -15,6 +15,10 @@ const ViewSecret = () => {
 
     const fetchCalled = React.useRef(false);
 
+    // Explicitly reference motion components to prevent tree-shaking
+    const MotionDiv = motion.div;
+    const MotionButton = motion.button;
+
     useEffect(() => {
         const fetchAndDecrypt = async () => {
             if (fetchCalled.current) return;
@@ -51,7 +55,7 @@ const ViewSecret = () => {
         };
 
         // Only fetch if user clicks "Reveal" to prevent accidental burn-on-read?
-        // For this MVP, we fetch immediately but hide UI until reveal? 
+        // For this MVP, we fetch immediately but hide UI until reveal?
         // Actually, fetching immediately burns the view count on the server.
         // Let's fetch immediately for simplicity, but maybe we should warn user first?
         // Current implementation: Fetch immediately.
@@ -84,7 +88,7 @@ const ViewSecret = () => {
 
     return (
         <div className="w-full max-w-4xl mx-auto">
-            <motion.div
+            <MotionDiv
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="glass-panel p-10 md:p-16 relative overflow-hidden"
@@ -100,17 +104,17 @@ const ViewSecret = () => {
                         <p className="text-gray-400 max-w-lg mx-auto text-lg">
                             This secret has been decrypted locally. Once you view it, make sure to save it if needed.
                         </p>
-                        <motion.button
+                        <MotionButton
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setRevealed(true)}
                             className="whisper-button mt-8"
                         >
                             REVEAL SECRET
-                        </motion.button>
+                        </MotionButton>
                     </div>
                 ) : (
-                    <motion.div
+                    <MotionDiv
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         className="space-y-8"
@@ -137,9 +141,9 @@ const ViewSecret = () => {
                                 This message was decrypted in your browser.
                             </p>
                         </div>
-                    </motion.div>
+                    </MotionDiv>
                 )}
-            </motion.div>
+            </MotionDiv>
         </div>
     );
 };

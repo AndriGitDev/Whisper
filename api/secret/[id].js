@@ -1,31 +1,32 @@
-const { kv } = require('@vercel/kv');
+import { kv as vercelKv } from '@vercel/kv';
+import { kv as mockKv } from '../kv-mock.js';
 
-module.exports = async (req, res) => {
+const kv = process.env.NODE_ENV === 'development' ? mockKv : vercelKv;
+
+export default async (req, res) => {
     try {
         if (req.method === 'GET') {
             const { id } = req.query;
-            const secret = await kv.get(id);
+            const data = await kv.get(id);
 
-            if (!secret) {
+            if (!data) {
                 return res.status(404).json({ error: 'Secret not found or expired' });
             }
+            const secret = typeof data === 'string' ? JSON.parse(data) : data;
 
-            // Decrement views
-            secret.viewsRemaining -= 1;
 
             const responseData = {
                 encryptedData: secret.encryptedData,
                 iv: secret.iv,
-                salt: secret.salt,
             };
 
-            if (secret.viewsRemaining <= 0) {
+            if (secret.viewsRemaining <= 1) {
                 // Delete the secret if no views are remaining
                 await kv.del(id);
             } else {
-                // Otherwise, update the secret with the new view count
+                secret.viewsRemaining -= 1;
                 const ttl = await kv.ttl(id);
-                await kv.set(id, secret, { ex: ttl });
+                await kv.set(id, JSON.stringify(secret), { ex: ttl });
             }
 
             res.json(responseData);

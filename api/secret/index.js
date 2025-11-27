@@ -1,12 +1,15 @@
-const crypto = require('crypto');
-const { kv } = require('@vercel/kv');
+import crypto from 'crypto';
+import { kv as vercelKv } from '@vercel/kv';
+import { kv as mockKv } from '../kv-mock.js';
 
-module.exports = async (req, res) => {
+const kv = process.env.NODE_ENV === 'development' ? mockKv : vercelKv;
+
+export default async (req, res) => {
     try {
         if (req.method === 'POST') {
-            const { encryptedData, iv, salt, expiration, views } = req.body;
+            const { encryptedData, iv, expiration, views } = req.body;
 
-            if (!encryptedData || !iv || !salt) {
+            if (!encryptedData || !iv) {
                 return res.status(400).json({ error: 'Missing required fields' });
             }
 
@@ -15,13 +18,12 @@ module.exports = async (req, res) => {
             const secret = {
                 encryptedData,
                 iv,
-                salt,
                 viewsRemaining: views || 1, // Default to 1 view
             };
 
             const ttl = expiration || 24 * 60 * 60; // Default to 24 hours in seconds
 
-            await kv.set(id, secret, { ex: ttl });
+            await kv.set(id, JSON.stringify(secret), { ex: ttl });
 
             res.json({ id });
         } else {

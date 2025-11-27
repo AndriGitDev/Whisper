@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"npm:dev:api\" \"npm:dev:vite\"",
+    "dev:vite": "vite",
+    "dev:api": "NODE_ENV=development node -r dotenv/config api/dev-server.js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -34,6 +36,9 @@
     "globals": "^16.5.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vercel": "^35.2.1",
+    "concurrently": "^8.2.2",
+    "dotenv": "^16.4.5"
   }
 }
