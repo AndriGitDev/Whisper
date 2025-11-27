@@ -1,43 +1,45 @@
-import { kv } from '@vercel/kv';
+import { getSecret, deleteSecret, decrementViews } from '../_lib/storage.js';
 
-export default async (req, res) => {
-    if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
-        return res.status(500).json({ error: 'KV environment variables not set.' });
-    }
+export default async function handler(req, res) {
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method === 'GET') {
     try {
-        if (req.method === 'GET') {
-            const { id } = req.query;
-            const data = await kv.get(id);
+      const { id } = req.query;
+      const secret = await getSecret(id);
 
-            if (!data) {
-                return res.status(404).json({ error: 'Secret not found or expired' });
-            }
-            const secret = typeof data === 'string' ? JSON.parse(data) : data;
+      if (!secret) {
+        return res.status(404).json({ error: 'Secret not found or expired' });
+      }
 
+      // Check expiration
+      if (secret.expiration && Date.now() > secret.expiration) {
+        await deleteSecret(id);
+        return res.status(404).json({ error: 'Secret not found or expired' });
+      }
 
-            const responseData = {
-                encryptedData: secret.encryptedData,
-                iv: secret.iv,
-                salt: secret.salt,
-            };
+      const responseData = {
+        encryptedData: secret.encryptedData,
+        iv: secret.iv,
+        salt: secret.salt
+      };
 
-            if (secret.viewsRemaining <= 1) {
-                // Delete the secret if no views are remaining
-                await kv.del(id);
-            } else {
-                secret.viewsRemaining -= 1;
-                const ttl = await kv.ttl(id);
-                await kv.set(id, JSON.stringify(secret), { ex: ttl });
-            }
+      // Decrement views and delete if needed
+      await decrementViews(id);
 
-            res.json(responseData);
-        } else {
-            res.setHeader('Allow', ['GET']);
-            res.status(405).end(`Method ${req.method} Not Allowed`);
-        }
+      return res.status(200).json(responseData);
     } catch (error) {
-        console.error('Error retrieving secret:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+      console.error('Error retrieving secret:', error);
+      return res.status(500).json({ error: 'Internal server error' });
     }
-};
+  }
+
+  return res.status(405).json({ error: 'Method not allowed' });
+}
