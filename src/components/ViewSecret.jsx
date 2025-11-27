@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Unlock, AlertTriangle, EyeOff, Copy, Check } from 'lucide-react';
 import { importKey, decryptData } from '../utils/cryptoUtils';
 
