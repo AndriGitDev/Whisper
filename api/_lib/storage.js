@@ -19,7 +19,8 @@ export async function setSecret(id, secretData) {
   if (kv) {
     // Use Vercel KV with expiration
     const ttl = Math.ceil((secretData.expiration - Date.now()) / 1000);
-    await kv.set(`${STORAGE_PREFIX}${id}`, JSON.stringify(secretData), {
+    // Vercel KV automatically serializes objects, no need to stringify
+    await kv.set(`${STORAGE_PREFIX}${id}`, secretData, {
       ex: Math.max(ttl, 1) // At least 1 second
     });
   } else {
@@ -30,8 +31,9 @@ export async function setSecret(id, secretData) {
 
 export async function getSecret(id) {
   if (kv) {
+    // Vercel KV automatically deserializes objects, no need to parse
     const data = await kv.get(`${STORAGE_PREFIX}${id}`);
-    return data ? JSON.parse(data) : null;
+    return data || null;
   } else {
     return inMemoryStore.get(id) || null;
   }
