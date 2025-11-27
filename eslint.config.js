@@ -32,12 +32,12 @@ export default defineConfig([
       'react-refresh/only-export-components': 'warn',
     },
   },
-  // Configuration for API files (ES Modules)
+  // Configuration for API files (CommonJS)
   {
     files: ['api/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
-      sourceType: 'module',
+      sourceType: 'commonjs',
       globals: {
         ...globals.node,
       },

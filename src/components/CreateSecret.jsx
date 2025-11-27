@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Lock, Clock, Eye, Copy, Check, ShieldCheck, ChevronDown } from 'lucide-react';
 import { generateKey, exportKey, encryptData } from '../utils/cryptoUtils';
 
