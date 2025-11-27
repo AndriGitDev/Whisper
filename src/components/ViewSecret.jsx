@@ -91,26 +91,28 @@ const ViewSecret = () => {
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-secondary-color to-transparent opacity-50" />
 
                 {!revealed ? (
-                    <div className="flex flex-col items-center justify-center text-center space-y-8 py-10 w-full">
+                    <div className="text-center space-y-8 py-10">
                         <div className="w-24 h-24 bg-secondary-color/10 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Unlock className="text-secondary-color w-12 h-12" />
                         </div>
-                        <h2 className="text-4xl font-bold text-white w-full text-center">Secret Ready</h2>
-                        <p className="text-gray-400 max-w-lg mx-auto text-lg text-center w-full">
+                        <h2 className="text-4xl font-bold text-white text-center">Secret Ready</h2>
+                        <p className="text-gray-400 max-w-lg mx-auto text-lg text-center">
                             Click below to retrieve and decrypt the secret. This will consume one view.
                         </p>
-                        <p className="text-yellow-500/80 text-sm max-w-md mx-auto text-center w-full">
+                        <p className="text-yellow-500/80 text-sm max-w-md mx-auto text-center">
                             ⚠️ Warning: Once revealed, this action cannot be undone and will count against the view limit.
                         </p>
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={handleRevealClick}
-                            disabled={!readyToReveal || loading}
-                            className="whisper-button mt-8 mx-auto"
-                        >
-                            {loading ? 'RETRIEVING...' : 'REVEAL SECRET'}
-                        </motion.button>
+                        <div className="flex justify-center mt-8">
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleRevealClick}
+                                disabled={!readyToReveal || loading}
+                                className="whisper-button"
+                            >
+                                {loading ? 'RETRIEVING...' : 'REVEAL SECRET'}
+                            </motion.button>
+                        </div>
                     </div>
                 ) : (
                     <motion.div
