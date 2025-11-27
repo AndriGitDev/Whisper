@@ -1,17 +1,20 @@
-const { kv } = require('@vercel/kv');
+import { kv } from '@vercel/kv';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
+    if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+        return res.status(500).json({ error: 'KV environment variables not set.' });
+    }
+
     try {
         if (req.method === 'GET') {
             const { id } = req.query;
-            const secret = await kv.get(id);
+            const data = await kv.get(id);
 
-            if (!secret) {
+            if (!data) {
                 return res.status(404).json({ error: 'Secret not found or expired' });
             }
+            const secret = typeof data === 'string' ? JSON.parse(data) : data;
 
-            // Decrement views
-            secret.viewsRemaining -= 1;
 
             const responseData = {
                 encryptedData: secret.encryptedData,
@@ -19,13 +22,13 @@ module.exports = async (req, res) => {
                 salt: secret.salt,
             };
 
-            if (secret.viewsRemaining <= 0) {
+            if (secret.viewsRemaining <= 1) {
                 // Delete the secret if no views are remaining
                 await kv.del(id);
             } else {
-                // Otherwise, update the secret with the new view count
+                secret.viewsRemaining -= 1;
                 const ttl = await kv.ttl(id);
-                await kv.set(id, secret, { ex: ttl });
+                await kv.set(id, JSON.stringify(secret), { ex: ttl });
             }
 
             res.json(responseData);
