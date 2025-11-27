@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
 import { Unlock, AlertTriangle, EyeOff, Copy, Check } from 'lucide-react';
 import { importKey, decryptData } from '../utils/cryptoUtils';
 

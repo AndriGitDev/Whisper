@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
 import { Lock, Clock, Eye, Copy, Check, ShieldCheck, ChevronDown } from 'lucide-react';
 import { generateKey, exportKey, encryptData } from '../utils/cryptoUtils';
 
