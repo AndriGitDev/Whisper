@@ -9,7 +9,7 @@ try {
   const kvModule = await import('@vercel/kv');
   kv = kvModule.kv;
   console.log('Using Vercel KV for storage');
-} catch (error) {
+} catch {
   console.warn('Vercel KV not available, using in-memory storage (not recommended for production)');
 }
 

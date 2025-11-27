@@ -1,11 +1,13 @@
 import crypto from 'crypto';
 import { setSecret } from './_lib/storage.js';
+import { checkRateLimit, setCorsHeaders, setSecurityHeaders, validateSecretInput } from './_lib/security.js';
 
 export default async function handler(req, res) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // Set CORS headers
+  setCorsHeaders(res, req);
+
+  // Set security headers
+  setSecurityHeaders(res);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -13,12 +15,23 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
+      // Rate limiting: 10 secrets per minute per client
+      const rateLimitError = checkRateLimit(req, 10, 60000);
+      if (rateLimitError) {
+        return res.status(429).json(rateLimitError);
+      }
+
+      // Validate input
+      const validationErrors = validateSecretInput(req.body);
+      if (validationErrors.length > 0) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: validationErrors
+        });
+      }
+
       // Create a secret
       const { encryptedData, iv, salt, expiration, views } = req.body;
-
-      if (!encryptedData || !iv || !salt) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
 
       const id = crypto.randomBytes(16).toString('hex');
       const now = Date.now();
