@@ -141,9 +141,9 @@ export function setSecurityHeaders(res) {
 export function validateSecretInput(body) {
   const errors = [];
 
-  // Check required fields
-  if (!body.encryptedData || !body.iv || !body.salt) {
-    errors.push('Missing required fields: encryptedData, iv, or salt');
+  // Check required fields (salt is optional for backward compatibility)
+  if (!body.encryptedData || !body.iv) {
+    errors.push('Missing required fields: encryptedData or iv');
   }
 
   // Validate encryptedData size (max 100KB base64 encoded)
@@ -156,8 +156,8 @@ export function validateSecretInput(body) {
     errors.push('Invalid IV format');
   }
 
-  // Validate salt format
-  if (body.salt && !isValidBase64(body.salt)) {
+  // Validate salt format only if provided and not a placeholder
+  if (body.salt && body.salt !== 'unused-in-this-version' && !isValidBase64(body.salt)) {
     errors.push('Invalid salt format');
   }
 
