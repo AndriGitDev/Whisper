@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { useParams, useLocation } from 'react-router-dom';
 import { Unlock, AlertTriangle, EyeOff, Copy, Check } from 'lucide-react';
 import { importKey, decryptData } from '../utils/cryptoUtils';
@@ -13,10 +14,6 @@ const ViewSecret = () => {
     const [copied, setCopied] = useState(false);
 
     const fetchCalled = React.useRef(false);
-
-    // Explicitly reference motion components to prevent tree-shaking
-    const MotionDiv = motion.div;
-    const MotionButton = motion.button;
 
     useEffect(() => {
         const fetchAndDecrypt = async () => {
@@ -87,7 +84,7 @@ const ViewSecret = () => {
 
     return (
         <div className="w-full max-w-4xl mx-auto">
-            <MotionDiv
+            <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="glass-panel p-10 md:p-16 relative overflow-hidden"
@@ -103,17 +100,17 @@ const ViewSecret = () => {
                         <p className="text-gray-400 max-w-lg mx-auto text-lg">
                             This secret has been decrypted locally. Once you view it, make sure to save it if needed.
                         </p>
-                        <MotionButton
+                        <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setRevealed(true)}
                             className="whisper-button mt-8"
                         >
                             REVEAL SECRET
-                        </MotionButton>
+                        </motion.button>
                     </div>
                 ) : (
-                    <MotionDiv
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         className="space-y-8"
@@ -140,9 +137,9 @@ const ViewSecret = () => {
                                 This message was decrypted in your browser.
                             </p>
                         </div>
-                    </MotionDiv>
+                    </motion.div>
                 )}
-            </MotionDiv>
+            </motion.div>
         </div>
     );
 };

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Lock, Clock, Eye, Copy, Check, ShieldCheck, ChevronDown } from 'lucide-react';
 import { generateKey, exportKey, encryptData } from '../utils/cryptoUtils';
 
@@ -9,10 +10,6 @@ const CreateSecret = () => {
     const [generatedLink, setGeneratedLink] = useState('');
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
-
-    // Explicitly reference motion components to prevent tree-shaking
-    const MotionDiv = motion.div;
-    const MotionButton = motion.button;
 
     const handleCreate = async () => {
         if (!secret) return;
@@ -65,7 +62,7 @@ const CreateSecret = () => {
         <div className="w-full max-w-4xl mx-auto">
 
 
-            <MotionDiv
+            <motion.div
                 initial={{ opacity: 0, y: 40, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.6, ease: "easeOut" }}
@@ -124,7 +121,7 @@ const CreateSecret = () => {
                             </div>
                         </div>
 
-                        <MotionButton
+                        <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={handleCreate}
@@ -132,7 +129,7 @@ const CreateSecret = () => {
                             className="whisper-button"
                         >
                             {loading ? 'ENCRYPTING...' : 'GENERATE SECURE LINK'}
-                        </MotionButton>
+                        </motion.button>
 
                         <div className="text-xs text-gray-500 text-center font-mono flex items-center justify-center gap-2">
                             <ShieldCheck size={12} />
@@ -140,7 +137,7 @@ const CreateSecret = () => {
                         </div>
                     </div>
                 ) : (
-                    <MotionDiv
+                    <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className="space-y-8 text-center"
@@ -178,9 +175,9 @@ const CreateSecret = () => {
                         >
                             Create another secret
                         </button>
-                    </MotionDiv>
+                    </motion.div>
                 )}
-            </MotionDiv>
+            </motion.div>
         </div>
     );
 };
