@@ -9,54 +9,61 @@ const ViewSecret = () => {
     const location = useLocation();
     const [decryptedSecret, setDecryptedSecret] = useState('');
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [revealed, setRevealed] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [readyToReveal, setReadyToReveal] = useState(false);
 
     const fetchCalled = React.useRef(false);
 
     useEffect(() => {
-        const fetchAndDecrypt = async () => {
-            if (fetchCalled.current) return;
-            fetchCalled.current = true;
-
-            try {
-                // 1. Get Key from Hash
-                const hash = location.hash.substring(1); // Remove #
-                if (!hash) {
-                    throw new Error("Missing decryption key in URL");
-                }
-
-                // 2. Fetch Encrypted Data
-                const response = await fetch(`/api/secret/${id}`);
-                if (!response.ok) {
-                    if (response.status === 404) {
-                        throw new Error("Secret not found or has expired.");
-                    }
-                    throw new Error("Failed to fetch secret.");
-                }
-
-                const data = await response.json();
-
-                // 3. Decrypt
-                const key = await importKey(hash);
-                const secret = await decryptData(data.encryptedData, data.iv, key);
-
-                setDecryptedSecret(secret);
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        // Only fetch if user clicks "Reveal" to prevent accidental burn-on-read?
-        // For this MVP, we fetch immediately but hide UI until reveal?
-        // Actually, fetching immediately burns the view count on the server.
-        // Let's fetch immediately for simplicity, but maybe we should warn user first?
-        // Current implementation: Fetch immediately.
-        fetchAndDecrypt();
+        // Validate that we have the required components
+        const hash = location.hash.substring(1);
+        if (!hash || !id) {
+            setError("Invalid secret link - missing decryption key or ID");
+            return;
+        }
+        setReadyToReveal(true);
     }, [id, location.hash]);
+
+    const handleRevealClick = async () => {
+        if (fetchCalled.current || loading) return;
+        fetchCalled.current = true;
+        setLoading(true);
+
+        try {
+            // 1. Get Key from Hash
+            const hash = location.hash.substring(1); // Remove #
+            if (!hash) {
+                throw new Error("Missing decryption key in URL");
+            }
+
+            // 2. Fetch Encrypted Data (this burns a view)
+            const response = await fetch(`/api/secret/${id}`);
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error("Secret not found or has expired.");
+                }
+                if (response.status === 429) {
+                    throw new Error("Rate limit exceeded. Please try again in a moment.");
+                }
+                throw new Error("Failed to fetch secret.");
+            }
+
+            const data = await response.json();
+
+            // 3. Decrypt
+            const key = await importKey(hash);
+            const secret = await decryptData(data.encryptedData, data.iv, key);
+
+            setDecryptedSecret(secret);
+            setRevealed(true);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(decryptedSecret);
@@ -64,19 +71,11 @@ const ViewSecret = () => {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-color"></div>
-            </div>
-        );
-    }
-
     if (error) {
         return (
             <div className="max-w-md mx-auto mt-10 p-6 glass-panel text-center border-red-500/30">
                 <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-white mb-2">Access Denied</h2>
+                <h2 className="text-2xl font-bold text-white mb-2">Error</h2>
                 <p className="text-gray-400">{error}</p>
             </div>
         );
@@ -96,17 +95,21 @@ const ViewSecret = () => {
                         <div className="w-24 h-24 bg-secondary-color/10 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Unlock className="text-secondary-color w-12 h-12" />
                         </div>
-                        <h2 className="text-4xl font-bold text-white">Secret Received</h2>
+                        <h2 className="text-4xl font-bold text-white">Secret Ready</h2>
                         <p className="text-gray-400 max-w-lg mx-auto text-lg">
-                            This secret has been decrypted locally. Once you view it, make sure to save it if needed.
+                            Click below to retrieve and decrypt the secret. This will consume one view.
+                        </p>
+                        <p className="text-yellow-500/80 text-sm max-w-md mx-auto">
+                            ⚠️ Warning: Once revealed, this action cannot be undone and will count against the view limit.
                         </p>
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => setRevealed(true)}
+                            onClick={handleRevealClick}
+                            disabled={!readyToReveal || loading}
                             className="whisper-button mt-8"
                         >
-                            REVEAL SECRET
+                            {loading ? 'RETRIEVING...' : 'REVEAL SECRET'}
                         </motion.button>
                     </div>
                 ) : (
