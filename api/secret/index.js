@@ -1,7 +1,11 @@
-const crypto = require('crypto');
-const { kv } = require('@vercel/kv');
+import crypto from 'crypto';
+import { kv } from '@vercel/kv';
 
-module.exports = async (req, res) => {
+export default async (req, res) => {
+    if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+        return res.status(500).json({ error: 'KV environment variables not set.' });
+    }
+
     try {
         if (req.method === 'POST') {
             const { encryptedData, iv, salt, expiration, views } = req.body;
@@ -21,7 +25,7 @@ module.exports = async (req, res) => {
 
             const ttl = expiration || 24 * 60 * 60; // Default to 24 hours in seconds
 
-            await kv.set(id, secret, { ex: ttl });
+            await kv.set(id, JSON.stringify(secret), { ex: ttl });
 
             res.json({ id });
         } else {
