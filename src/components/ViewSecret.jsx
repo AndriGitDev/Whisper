@@ -95,22 +95,24 @@ const ViewSecret = () => {
                         <div className="w-24 h-24 bg-secondary-color/10 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Unlock className="text-secondary-color w-12 h-12" />
                         </div>
-                        <h2 className="text-4xl font-bold text-white">Secret Ready</h2>
-                        <p className="text-gray-400 max-w-lg mx-auto text-lg">
+                        <h2 className="text-4xl font-bold text-white text-center">Secret Ready</h2>
+                        <p className="text-gray-400 max-w-lg mx-auto text-lg text-center">
                             Click below to retrieve and decrypt the secret. This will consume one view.
                         </p>
-                        <p className="text-yellow-500/80 text-sm max-w-md mx-auto">
+                        <p className="text-yellow-500/80 text-sm max-w-md mx-auto text-center">
                             ⚠️ Warning: Once revealed, this action cannot be undone and will count against the view limit.
                         </p>
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={handleRevealClick}
-                            disabled={!readyToReveal || loading}
-                            className="whisper-button mt-8"
-                        >
-                            {loading ? 'RETRIEVING...' : 'REVEAL SECRET'}
-                        </motion.button>
+                        <div className="flex justify-center mt-8">
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleRevealClick}
+                                disabled={!readyToReveal || loading}
+                                className="whisper-button"
+                            >
+                                {loading ? 'RETRIEVING...' : 'REVEAL SECRET'}
+                            </motion.button>
+                        </div>
                     </div>
                 ) : (
                     <motion.div
