@@ -1,16 +1,95 @@
-# React + Vite
+# Whisper
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A website to secretly share secrets or passwords temporarily.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🔐 **Client-side Encryption**: Secrets are encrypted in your browser before transmission
+- 🔥 **Burn on Read**: Secrets can self-destruct after being viewed
+- ⏱️ **Time-Limited**: Set expiration times (1 hour to 7 days)
+- 👁️ **View Limits**: Control how many times a secret can be accessed
+- 🚫 **Zero Knowledge**: Server never sees your unencrypted data
+- 🎨 **Modern UI**: Clean, responsive interface
 
-## React Compiler
+## Deployment Options
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Deploy to Vercel (Recommended)
 
-## Expanding the ESLint configuration
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/andripetur/Whisper)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed instructions.
+
+**Important**: You'll need to add Redis (KV) storage for persistence. See [STORAGE_SETUP.md](./STORAGE_SETUP.md) for setup instructions.
+
+### Deploy to Ubuntu VPS
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for instructions on deploying to a traditional VPS.
+
+## Local Development
+
+### Prerequisites
+
+- Node.js 20+ and npm
+
+### Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/andripetur/Whisper.git
+cd Whisper
+```
+
+2. Install dependencies:
+```bash
+# Install frontend dependencies
+cd client
+npm install
+
+# Install backend dependencies
+cd ../server
+npm install
+```
+
+3. Run the development servers:
+
+**Terminal 1 - Backend:**
+```bash
+cd server
+node server.js
+```
+
+**Terminal 2 - Frontend:**
+```bash
+cd client
+npm run dev
+```
+
+4. Open http://localhost:5173 in your browser
+
+## Technology Stack
+
+- **Frontend**: React, Vite, TailwindCSS, Framer Motion
+- **Backend**: Express.js (local) / Vercel Serverless Functions (production)
+- **Storage**: In-memory (local) / Vercel KV (production)
+- **Encryption**: Web Crypto API (AES-GCM)
+
+## How It Works
+
+1. User enters a secret message
+2. A random encryption key is generated in the browser
+3. The message is encrypted using AES-GCM
+4. Encrypted data is sent to the server
+5. Server stores encrypted data with expiration/view limits
+6. User receives a shareable link containing the decryption key in the URL fragment
+7. Recipient opens the link and the key (from URL fragment) decrypts the message client-side
+8. Secret is deleted after viewing or expiration
+
+**Security Note**: The decryption key never leaves the browser and is not sent to the server.
+
+## License
+
+MIT
+
+## Author
+
+Made by [Andri Petur](https://andri.is)
