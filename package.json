@@ -1,5 +1,5 @@
 {
-  "name": "client",
+  "name": "whisper",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,8 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vercel/kv": "^3.0.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "framer-motion": "^12.23.24",
+    "helmet": "^8.1.0",
     "lucide-react": "^0.554.0",
+    "morgan": "^1.10.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.6"
