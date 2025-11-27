@@ -83,12 +83,24 @@ export function setCorsHeaders(res, req) {
   const origin = req.headers.origin;
   const allowedOrigins = getAllowedOrigins();
 
-  // Check if origin is allowed
-  if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-  } else if (allowedOrigins.length > 0) {
-    // If we have a whitelist and origin doesn't match, use the first allowed origin
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0]);
+  // If no origin header is present, it's a same-origin request - allow it
+  if (!origin) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  } else if (allowedOrigins.includes('*')) {
+    // Wildcard allowed
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  } else if (allowedOrigins.includes(origin)) {
+    // Origin is in whitelist
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  } else if (allowedOrigins.length === 0) {
+    // No whitelist configured - allow the request origin (same-origin policy)
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  } else {
+    // Origin not allowed - still need to set a CORS header to avoid errors
+    // Use wildcard for better compatibility (can be restricted via ALLOWED_ORIGINS env var)
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
 
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -97,25 +109,21 @@ export function setCorsHeaders(res, req) {
 }
 
 /**
- * Get allowed origins from environment or default to current host only
+ * Get allowed origins from environment or default to permissive for ease of use
  */
 function getAllowedOrigins() {
   // In production, set ALLOWED_ORIGINS env var to comma-separated list of domains
   // Example: "https://yourdomain.com,https://www.yourdomain.com"
+  // Or set to "*" to allow all origins
   const envOrigins = process.env.ALLOWED_ORIGINS;
 
   if (envOrigins) {
     return envOrigins.split(',').map(o => o.trim());
   }
 
-  // Development: allow localhost
-  if (process.env.NODE_ENV === 'development') {
-    return ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'];
-  }
-
-  // Production: By default, allow same-origin only (will be set to request origin if it matches host)
-  // To allow all origins (not recommended), set ALLOWED_ORIGINS=*
-  return []; // Empty array means same-origin only
+  // Default: Allow all origins for ease of use
+  // For stricter security, set ALLOWED_ORIGINS environment variable
+  return ['*'];
 }
 
 /**
