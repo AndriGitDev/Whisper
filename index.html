@@ -9,5 +9,18 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <!-- Swetrix Analytics -->
+    <script src="https://swetrix.org/swetrix.js" defer></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        swetrix.init('xaRW55I2BfeL', {
+          apiURL: 'https://swetrixapi.kindra.is/log',
+        })
+        swetrix.trackViews()
+      })
+    </script>
+    <noscript>
+      <img src="https://swetrixapi.kindra.is/log/noscript?pid=xaRW55I2BfeL" alt="" referrerpolicy="no-referrer-when-downgrade" />
+    </noscript>
   </body>
 </html>
