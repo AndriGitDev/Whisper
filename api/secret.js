@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       // Rate limiting: 10 secrets per minute per client
-      const rateLimitError = checkRateLimit(req, 10, 60000);
+      const rateLimitError = await checkRateLimit(req, 10, 60000);
       if (rateLimitError) {
         return res.status(429).json(rateLimitError);
       }

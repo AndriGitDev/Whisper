@@ -1,17 +1,7 @@
 // Security middleware for API endpoints
 
-// Rate limiting using in-memory store (for serverless, consider using KV store for production)
-const rateLimitStore = new Map();
-
-// Clean up old rate limit entries every 10 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, data] of rateLimitStore.entries()) {
-    if (now - data.resetTime > 0) {
-      rateLimitStore.delete(key);
-    }
-  }
-}, 10 * 60 * 1000);
+import { createHash } from 'node:crypto';
+import { incrementRateLimit } from './storage.js';
 
 /**
  * Rate limiting middleware
@@ -20,42 +10,20 @@ setInterval(() => {
  * @param {number} windowMs - Time window in milliseconds
  * @returns {Object|null} - Returns error response if rate limited, null otherwise
  */
-export function checkRateLimit(req, maxRequests = 10, windowMs = 60000) {
+export async function checkRateLimit(req, maxRequests = 10, windowMs = 60000) {
   // Use IP address or a combination of IP and user agent for identification
   const identifier = getClientIdentifier(req);
-  const now = Date.now();
-
-  const rateData = rateLimitStore.get(identifier);
-
-  if (!rateData) {
-    // First request from this identifier
-    rateLimitStore.set(identifier, {
-      count: 1,
-      resetTime: now + windowMs
-    });
-    return null;
-  }
-
-  if (now > rateData.resetTime) {
-    // Window has expired, reset
-    rateLimitStore.set(identifier, {
-      count: 1,
-      resetTime: now + windowMs
-    });
-    return null;
-  }
-
-  if (rateData.count >= maxRequests) {
+  const key = createHash('sha256').update(identifier).digest('hex');
+  const rateData = await incrementRateLimit(key, windowMs);
+  if (rateData.count > maxRequests) {
     // Rate limit exceeded
     return {
       error: 'Too many requests',
       message: 'Rate limit exceeded. Please try again later.',
-      retryAfter: Math.ceil((rateData.resetTime - now) / 1000)
+      retryAfter: Math.max(1, Math.ceil(rateData.ttlMs / 1000))
     };
   }
 
-  // Increment count
-  rateData.count++;
   return null;
 }
 
@@ -82,13 +50,13 @@ function getClientIdentifier(req) {
 export function setCorsHeaders(res, req) {
   const origin = req.headers.origin;
   const allowedOrigins = getAllowedOrigins();
+  const forwardedHost = req.headers['x-forwarded-host'] || req.headers.host;
+  const forwardedProto = req.headers['x-forwarded-proto'] || 'https';
+  const sameOrigin = forwardedHost ? `${forwardedProto}://${forwardedHost}` : null;
 
-  // Check if origin is allowed
-  if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin || '*');
-  } else if (allowedOrigins.length > 0) {
-    // If we have a whitelist and origin doesn't match, use the first allowed origin
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigins[0]);
+  if (origin && (origin === sameOrigin || allowedOrigins.includes(origin))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
   }
 
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -124,14 +92,14 @@ function getAllowedOrigins() {
 export function setSecurityHeaders(res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
 
   // Content Security Policy
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none';"
+    "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; form-action 'self';"
   );
 }
 
