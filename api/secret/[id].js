@@ -1,4 +1,4 @@
-import { getSecret, deleteSecret, decrementViews } from '../_lib/storage.js';
+import { consumeSecret } from '../_lib/storage.js';
 import { checkRateLimit, setCorsHeaders, setSecurityHeaders } from '../_lib/security.js';
 
 export default async function handler(req, res) {
@@ -15,19 +15,21 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       // Rate limiting: 20 retrievals per minute per client (higher than creation)
-      const rateLimitError = checkRateLimit(req, 20, 60000);
+      const rateLimitError = await checkRateLimit(req, 20, 60000);
       if (rateLimitError) {
         return res.status(429).json(rateLimitError);
       }
 
-      const { id } = req.query;
+      const id = req.query.id || req.params?.id;
 
       // Validate ID format (should be 32 hex characters)
       if (!id || !/^[a-f0-9]{32}$/i.test(id)) {
         return res.status(400).json({ error: 'Invalid secret ID format' });
       }
 
-      const secret = await getSecret(id);
+      // Atomically fetch and consume a view so concurrent requests cannot
+      // retrieve a one-view secret more than once.
+      const secret = await consumeSecret(id);
 
       if (!secret) {
         return res.status(404).json({ error: 'Secret not found or expired' });
@@ -35,7 +37,6 @@ export default async function handler(req, res) {
 
       // Check expiration
       if (secret.expiration && Date.now() > secret.expiration) {
-        await deleteSecret(id);
         return res.status(404).json({ error: 'Secret not found or expired' });
       }
 
@@ -44,9 +45,6 @@ export default async function handler(req, res) {
         iv: secret.iv,
         salt: secret.salt
       };
-
-      // Decrement views and delete if needed
-      await decrementViews(id);
 
       return res.status(200).json(responseData);
     } catch (error) {
