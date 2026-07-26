@@ -1,30 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useParams, useLocation } from 'react-router-dom';
 import { Unlock, AlertTriangle, EyeOff, Copy, Check } from 'lucide-react';
 import { importKey, decryptData } from '../utils/cryptoUtils';
 
-const ViewSecret = () => {
-    const { id } = useParams();
-    const location = useLocation();
+const ViewSecret = ({ id, hash }) => {
+    const decryptionKey = hash.substring(1);
+    const linkIsValid = Boolean(decryptionKey && id);
     const [decryptedSecret, setDecryptedSecret] = useState('');
-    const [error, setError] = useState('');
+    const [error, setError] = useState(
+        linkIsValid ? '' : 'Invalid secret link - missing decryption key or ID'
+    );
     const [loading, setLoading] = useState(false);
     const [revealed, setRevealed] = useState(false);
     const [copied, setCopied] = useState(false);
-    const [readyToReveal, setReadyToReveal] = useState(false);
 
     const fetchCalled = React.useRef(false);
-
-    useEffect(() => {
-        // Validate that we have the required components
-        const hash = location.hash.substring(1);
-        if (!hash || !id) {
-            setError("Invalid secret link - missing decryption key or ID");
-            return;
-        }
-        setReadyToReveal(true);
-    }, [id, location.hash]);
 
     const handleRevealClick = async () => {
         if (fetchCalled.current || loading) return;
@@ -33,8 +23,7 @@ const ViewSecret = () => {
 
         try {
             // 1. Get Key from Hash
-            const hash = location.hash.substring(1); // Remove #
-            if (!hash) {
+            if (!decryptionKey) {
                 throw new Error("Missing decryption key in URL");
             }
 
@@ -53,7 +42,7 @@ const ViewSecret = () => {
             const data = await response.json();
 
             // 3. Decrypt
-            const key = await importKey(hash);
+            const key = await importKey(decryptionKey);
             const secret = await decryptData(data.encryptedData, data.iv, key);
 
             setDecryptedSecret(secret);
@@ -116,7 +105,7 @@ const ViewSecret = () => {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={handleRevealClick}
-                            disabled={!readyToReveal || loading}
+                            disabled={!linkIsValid || loading}
                             className="whisper-button mt-8"
                         >
                             {loading ? 'RETRIEVING...' : 'REVEAL SECRET'}
