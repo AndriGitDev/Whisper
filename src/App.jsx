@@ -1,13 +1,15 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import CreateSecret from './components/CreateSecret';
 import ViewSecret from './components/ViewSecret';
-import { Ghost } from 'lucide-react';
 
 function App() {
+  const secretMatch = window.location.pathname.match(/^\/view\/([^/]+)\/?$/);
+  const content = secretMatch
+    ? <ViewSecret id={decodeURIComponent(secretMatch[1])} hash={window.location.hash} />
+    : <CreateSecret />;
+
   return (
-    <Router>
-      <div className="min-h-screen flex flex-col relative overflow-hidden">
+    <div className="min-h-screen flex flex-col relative overflow-hidden">
         <div className="bg-shape bg-shape-1" />
         <div className="bg-shape bg-shape-2" />
 
@@ -33,12 +35,9 @@ function App() {
             </h2>
           </div>
 
-          {/* Routes Container - Centers vertically */}
+          {/* Content Container - Centers vertically */}
           <div className="flex-grow flex items-center justify-center w-full my-8">
-            <Routes>
-              <Route path="/" element={<CreateSecret />} />
-              <Route path="/view/:id" element={<ViewSecret />} />
-            </Routes>
+            {content}
           </div>
 
           {/* Footer Slogan */}
@@ -72,8 +71,7 @@ function App() {
         {/* Footer */}
         <footer className="p-6 text-center text-gray-600 text-xs font-mono">
         </footer>
-      </div>
-    </Router>
+    </div>
   );
 }
 

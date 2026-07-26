@@ -63,7 +63,10 @@ export async function decryptData(encryptedData, iv, key) {
         return new TextDecoder().decode(decryptedContent);
     } catch (e) {
         console.error("Decryption failed:", e);
-        throw new Error("Failed to decrypt data. The key might be incorrect or the data corrupted.");
+        throw new Error(
+            "Failed to decrypt data. The key might be incorrect or the data corrupted.",
+            { cause: e }
+        );
     }
 }
 
