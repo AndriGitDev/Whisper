@@ -23,7 +23,7 @@
     "helmet": "^8.1.0",
     "lucide-react": "^0.577.0",
     "morgan": "^1.11.0",
-    "postcss": "^8.5.8",
+    "postcss": "^8.5.26",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tailwindcss": "^4.1.17",
@@ -37,5 +37,13 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.8.0"
+  },
+  "overrides": {
+    "minimatch@3": {
+      "brace-expansion": "^1.1.18"
+    },
+    "minimatch@10": {
+      "brace-expansion": "^5.0.9"
+    }
   }
 }
