@@ -1,50 +1,51 @@
-# Vercel Deployment Guide
+# Vercel Serverless Deployment Guide
 
-This guide explains how to deploy Whisper to Vercel.
+Whisper deploys as a static Vite frontend plus three Node.js Functions under `api/`. Production state lives in Upstash Redis; no application server or persistent filesystem is required.
 
 ## Quick Start
 
 ### Deploy via GitHub (Recommended)
 
-1. Push your code to GitHub
-2. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-3. Click "Add New Project"
-4. Import your GitHub repository
-5. Vercel will auto-detect the configuration from `vercel.json`
-6. Click "Deploy"
+1. Push the code to the Git repository connected to Vercel.
+2. In the [Vercel Dashboard](https://vercel.com/dashboard), choose **Add New Project**.
+3. Import the Whisper repository.
+4. Keep the repository root as the project root. `vercel.json` supplies the build command and output directory.
+5. Deploy once to create the project, then add Redis before using it in production.
 
 ### Deploy via CLI
 
 ```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Deploy from project root
-vercel
+npx vercel
 ```
 
-## Add Redis Storage (Production)
+## Add Upstash Redis (Required in Production)
 
-For production use, add Redis storage to persist secrets across serverless function invocations.
+Redis stores encrypted payloads, expiration metadata, atomic view counters, and distributed rate limits across stateless Function instances.
 
-### Option 1: Vercel KV (Recommended)
+### Vercel Marketplace (Recommended)
 
-1. Go to your project in [Vercel Dashboard](https://vercel.com/dashboard)
-2. Navigate to the **Storage** tab
-3. Click **Create** or **Connect Store**
-4. Select **KV** or **Redis** (powered by Upstash)
-5. Follow the setup wizard
-6. Vercel automatically adds required environment variables
-7. Redeploy: Deployments → ⋯ → Redeploy
+1. Open the project in Vercel and go to **Storage** or **Integrations**.
+2. Add **Upstash for Redis** and connect a database to this project.
+3. Confirm that credentials were added to Production and Preview environments.
+4. Redeploy so the Functions receive the new environment variables.
 
-### Option 2: Direct Upstash Redis
+The integration may provide either of these supported pairs:
+
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
+- `KV_REST_API_URL` and `KV_REST_API_TOKEN`
+
+Using the CLI, the equivalent setup starts with:
+
+```bash
+npx vercel integration add upstash
+```
+
+### Existing Upstash Account
 
 1. Go to [Upstash Console](https://console.upstash.com/)
 2. Create a new Redis database
-3. Copy the REST API credentials
-4. In Vercel Dashboard → Settings → Environment Variables, add:
-   - `KV_REST_API_URL` = Your Upstash REST URL
-   - `KV_REST_API_TOKEN` = Your Upstash REST token
+3. Copy the REST API credentials.
+4. In Vercel **Settings → Environment Variables**, add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
 5. Redeploy your project
 
 ## Custom Domain
@@ -53,43 +54,45 @@ For production use, add Redis storage to persist secrets across serverless funct
 2. Add your domain
 3. Follow DNS configuration instructions
 
-## Environment Variables
+## Optional Environment Variable
 
-Required for persistent storage (automatically set when using Vercel KV):
-
-- `KV_REST_API_URL` - Redis REST API URL
-- `KV_REST_API_TOKEN` - Redis REST API token
+- `ALLOWED_ORIGINS` — comma-separated HTTPS origins allowed to call the API in addition to the deployment's own origin. Leave unset for same-origin requests only.
 
 ## Local Development
 
-The original Express.js server can still be used for local development:
+Install and verify from the repository root:
 
 ```bash
-# Terminal 1: Backend
-cd server
 npm install
-node server.js
-
-# Terminal 2: Frontend
-cd client
-npm install
-npm run dev
+npm test
+npm run lint
+npm run build
+npm start
 ```
+
+Without Redis credentials, local runs intentionally use an in-memory store. Production runs fail closed when persistent storage is absent.
+
+## Verify the Deployment
+
+1. Request `/api/health`. A configured deployment returns HTTP `200` with `{"status":"ok","storage":"persistent"}`.
+2. Create a one-view secret in the UI.
+3. Open its generated link and reveal it once.
+4. Reload the link. The second retrieval must return the expired/not-found state.
 
 ## Troubleshooting
 
 ### Secrets not persisting
 
-Add Redis storage following the steps above, then redeploy.
+Check `/api/health`. If it returns `503`, connect Upstash Redis to the same Vercel project and deployment environment, then redeploy.
 
 ### Build failures
 
 1. Check build logs in Vercel Dashboard
-2. Ensure all dependencies are in `package.json`
-3. Try running `npm run build` locally in the client directory
+2. Run `npm install`, `npm test`, and `npm run build` from the repository root.
+3. Ensure the Vercel project root is the repository root.
 
 ## Resources
 
 - [Vercel Documentation](https://vercel.com/docs)
-- [Vercel KV Documentation](https://vercel.com/docs/storage/vercel-kv)
+- [Vercel Marketplace Storage](https://vercel.com/docs/marketplace-storage)
 - [Upstash Documentation](https://docs.upstash.com/redis)

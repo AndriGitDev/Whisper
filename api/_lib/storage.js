@@ -1,19 +1,19 @@
-// Storage abstraction layer. Production requires Vercel/Upstash KV so secrets,
-// view counters, and rate limits remain consistent across instances.
+// Storage abstraction layer. Production requires Upstash Redis so secrets,
+// view counters, and rate limits remain consistent across function instances.
 
-let kv = null;
+import { Redis } from '@upstash/redis';
+
+let redis = null;
 const inMemoryStore = new Map();
 
-const hasKvConfig = Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 
-try {
-  if (!hasKvConfig) throw new Error('KV environment variables are missing');
-  const kvModule = await import('@vercel/kv');
-  kv = kvModule.kv;
-  console.log('Using Vercel KV for storage');
-} catch {
+if (redisUrl && redisToken) {
+  redis = new Redis({ url: redisUrl, token: redisToken });
+} else {
   if (process.env.NODE_ENV === 'production') {
-    console.error('Persistent KV storage is required in production');
+    console.error('Upstash Redis is required in production');
   } else {
     console.warn('Using development-only in-memory storage');
   }
@@ -22,12 +22,10 @@ try {
 const STORAGE_PREFIX = 'whisper:secret:';
 
 export async function setSecret(id, secretData) {
-  if (kv) {
-    // Use Vercel KV with expiration
+  if (redis) {
     const ttl = Math.ceil((secretData.expiration - Date.now()) / 1000);
-    // Vercel KV automatically serializes objects, no need to stringify
-    await kv.set(`${STORAGE_PREFIX}${id}`, secretData, {
-      ex: Math.max(ttl, 1) // At least 1 second
+    await redis.set(`${STORAGE_PREFIX}${id}`, secretData, {
+      ex: Math.max(ttl, 1)
     });
   } else {
     if (process.env.NODE_ENV === 'production') {
@@ -38,8 +36,8 @@ export async function setSecret(id, secretData) {
 }
 
 export async function consumeSecret(id) {
-  if (kv) {
-    const value = await kv.eval(
+  if (redis) {
+    const value = await redis.eval(
       `
         local value = redis.call('GET', KEYS[1])
         if not value then return nil end
@@ -77,8 +75,8 @@ export async function consumeSecret(id) {
 const developmentRateLimits = new Map();
 
 export async function incrementRateLimit(key, windowMs) {
-  if (kv) {
-    const result = await kv.eval(
+  if (redis) {
+    const result = await redis.eval(
       `
         local count = redis.call('INCR', KEYS[1])
         if count == 1 then redis.call('PEXPIRE', KEYS[1], ARGV[1]) end
@@ -101,5 +99,5 @@ export async function incrementRateLimit(key, windowMs) {
 }
 
 export function isPersistentStorageConfigured() {
-  return Boolean(kv);
+  return Boolean(redis);
 }

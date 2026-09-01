@@ -5,7 +5,7 @@ import { generateKey, exportKey, encryptData } from '../utils/cryptoUtils';
 
 const CreateSecret = () => {
     const [secret, setSecret] = useState('');
-    const [expiration, setExpiration] = useState(0); // 0 = 24 hours default
+    const [expiration, setExpiration] = useState(86400);
     const [views, setViews] = useState(1);
     const [generatedLink, setGeneratedLink] = useState('');
     const [loading, setLoading] = useState(false);
@@ -31,22 +31,23 @@ const CreateSecret = () => {
                     encryptedData,
                     iv,
                     salt: 'unused-in-this-version', // Kept for schema compatibility if needed later
-                    expiration: expiration === 0 ? 86400 : expiration, // Default 24h
+                    expiration,
                     views
                 })
             });
 
             const data = await response.json();
-
-            if (data.id) {
-                // 4. Construct Link
-                // Format: https://domain.com/view/ID#KEY
-                const link = `${window.location.origin}/view/${data.id}#${exportedKey}`;
-                setGeneratedLink(link);
+            if (!response.ok || !data.id) {
+                throw new Error(data.error || 'The server could not create the secret');
             }
+
+            // 4. Construct Link
+            // Format: https://domain.com/view/ID#KEY
+            const link = `${window.location.origin}/view/${data.id}#${exportedKey}`;
+            setGeneratedLink(link);
         } catch (error) {
             console.error("Failed to create secret:", error);
-            alert(`Failed to create secret: ${error.message}. \n\nIf you just updated the code, try restarting your dev server.`);
+            alert(`Failed to create secret: ${error.message}`);
         } finally {
             setLoading(false);
         }
