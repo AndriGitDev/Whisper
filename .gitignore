@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 .env
+.vercel
 .vite
 
 # Editor directories and files

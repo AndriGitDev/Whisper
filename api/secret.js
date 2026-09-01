@@ -39,7 +39,7 @@ export default async function handler(req, res) {
       // Calculate expiration time
       let expirationTime = null;
       if (expiration) {
-        expirationTime = now + (expiration * 1000);
+        expirationTime = now + (Number(expiration) * 1000);
       } else {
         expirationTime = now + (24 * 60 * 60 * 1000);
       }
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
         iv,
         salt,
         expiration: expirationTime,
-        viewsRemaining: views || 1
+        viewsRemaining: Number(views) || 1
       };
 
       await setSecret(id, secret);

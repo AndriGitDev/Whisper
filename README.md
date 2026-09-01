@@ -28,13 +28,11 @@ A secure web application for temporarily sharing secrets and passwords with clie
 
 ### Deploy to Vercel (Recommended)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/andripetur/Whisper)
+1. Import this repository into Vercel.
+2. Add an Upstash Redis database from the Vercel Marketplace and connect it to the project.
+3. Deploy. `vercel.json` builds the Vite frontend and exposes the files in `api/` as Node.js Functions.
 
-1. Click the button above or go to [Vercel](https://vercel.com/new)
-2. Import your repository
-3. Deploy with default settings
-
-**Important**: For production use, add Redis storage for persistence. See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed setup instructions.
+Persistent Redis storage is required in production so secrets, view counters, and rate limits remain consistent across stateless Function instances. See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for the complete setup and verification steps.
 
 ### Deploy to Ubuntu VPS
 
@@ -44,48 +42,38 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for instructions on deploying to a traditio
 
 ### Prerequisites
 
-- Node.js 20+ and npm
+- Node.js 22+ and npm
 
 ### Setup
 
-1. Clone the repository:
+1. Install dependencies from the repository root:
 ```bash
-git clone https://github.com/andripetur/Whisper.git
-cd Whisper
-```
-
-2. Install dependencies:
-```bash
-# Backend
-cd server
-npm install
-
-# Frontend
-cd ../client
 npm install
 ```
 
-3. Run the development servers:
-
-**Terminal 1 - Backend:**
+2. Run the frontend with hot reload:
 ```bash
-cd server
-node server.js
-```
-
-**Terminal 2 - Frontend:**
-```bash
-cd client
 npm run dev
 ```
 
-4. Open http://localhost:5173 in your browser
+For a complete local build with the API and development-only in-memory storage:
+```bash
+npm run build
+npm start
+```
+
+Run the verification suite with:
+```bash
+npm test
+npm run lint
+npm run build
+```
 
 ## Technology Stack
 
 - **Frontend**: React, Vite, TailwindCSS, Framer Motion
 - **Backend**: Express.js (local) / Vercel Serverless Functions (production)
-- **Storage**: In-memory (local) / Vercel KV Redis (production)
+- **Storage**: In-memory (local) / Upstash Redis (production)
 - **Encryption**: Web Crypto API (AES-GCM)
 
 ## License

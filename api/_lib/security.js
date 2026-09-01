@@ -81,8 +81,7 @@ function getAllowedOrigins() {
     return ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'];
   }
 
-  // Production: By default, allow same-origin only (will be set to request origin if it matches host)
-  // To allow all origins (not recommended), set ALLOWED_ORIGINS=*
+  // Production defaults to same-origin only. Add explicit HTTPS origins with ALLOWED_ORIGINS.
   return []; // Empty array means same-origin only
 }
 
@@ -90,6 +89,7 @@ function getAllowedOrigins() {
  * Set security headers
  */
 export function setSecurityHeaders(res) {
+  res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000');
@@ -108,6 +108,10 @@ export function setSecurityHeaders(res) {
  */
 export function validateSecretInput(body) {
   const errors = [];
+
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return ['Request body must be a JSON object'];
+  }
 
   // Check required fields (salt is optional for backward compatibility)
   if (!body.encryptedData || !body.iv) {
@@ -152,7 +156,7 @@ export function validateSecretInput(body) {
  * Check if string is valid base64
  */
 function isValidBase64(str) {
-  if (typeof str !== 'string') return false;
+  if (typeof str !== 'string' || str.length === 0 || str.length % 4 !== 0) return false;
   try {
     return Buffer.from(str, 'base64').toString('base64') === str;
   } catch {

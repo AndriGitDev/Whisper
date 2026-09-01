@@ -45,20 +45,18 @@ sudo mkdir -p /var/www/whisper
 sudo chown -R $USER:$USER /var/www/whisper
 
 # Clone repo (or copy files)
-git clone https://github.com/andripetur/Whisper.git /var/www/whisper
+git clone https://github.com/AndriGitDev/Whisper.git /var/www/whisper
 cd /var/www/whisper
 ```
 
-### Backend Setup
-
-Navigate to the server directory and install dependencies:
+Install dependencies and build the frontend from the repository root:
 
 ```bash
-cd server
-npm install
+npm ci
+npm run build
 ```
 
-Start the backend with PM2:
+Start the combined static and API server with PM2:
 
 ```bash
 pm2 start server.js --name "whisper-backend"
@@ -66,17 +64,7 @@ pm2 save
 pm2 startup
 ```
 
-### Frontend Setup
-
-Navigate to the client directory, install dependencies, and build:
-
-```bash
-cd ../client
-npm install
-npm run build
-```
-
-This will create a `dist` directory containing your production-ready frontend files.
+This creates `dist` and serves it together with the API from `server.js`.
 
 ## 3. Nginx Configuration
 
@@ -93,7 +81,7 @@ server {
     listen 80;
     server_name sss.andri.is;
 
-    root /var/www/whisper/client/dist;
+    root /var/www/whisper/dist;
     index index.html;
 
     # Serve Frontend (SPA support)
@@ -141,6 +129,8 @@ Follow the prompts. Certbot will automatically update your Nginx configuration t
 
 - **View Logs**: `pm2 logs whisper-backend`
 - **Restart Backend**: `pm2 restart whisper-backend`
-- **Update Frontend**:
+- **Update Application**:
   1. `git pull`
-  2. `cd client && npm install && npm run build`
+  2. `npm ci`
+  3. `npm run build`
+  4. `pm2 restart whisper-backend`

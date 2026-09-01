@@ -57,7 +57,7 @@ function App() {
               </a>
               <span className="text-gray-700">•</span>
               <a
-                href="https://github.com/andripetur/Whisper"
+                href="https://github.com/AndriGitDev/Whisper"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-white transition-colors"
