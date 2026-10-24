@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import secretHandler from './api/secret.js';
 import secretByIdHandler from './api/secret/[id].js';
 import healthHandler from './api/health.js';
+import { trustedProxyPolicy } from './api/_lib/security.js';
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -13,7 +14,7 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.join(root, 'dist');
 
 app.disable('x-powered-by');
-app.set('trust proxy', 2);
+app.set('trust proxy', trustedProxyPolicy());
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {

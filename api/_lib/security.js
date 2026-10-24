@@ -3,6 +3,11 @@
 import { createHash } from 'node:crypto';
 import { incrementRateLimit } from './storage.js';
 
+export function trustedProxyPolicy(env = process.env) {
+  const proxies = (env.TRUSTED_PROXIES || '').split(',').map(value => value.trim()).filter(Boolean);
+  return proxies.length ? proxies : false;
+}
+
 /**
  * Rate limiting middleware
  * @param {Request} req - Request object
@@ -11,7 +16,7 @@ import { incrementRateLimit } from './storage.js';
  * @returns {Object|null} - Returns error response if rate limited, null otherwise
  */
 export async function checkRateLimit(req, maxRequests = 10, windowMs = 60000) {
-  // Use IP address or a combination of IP and user agent for identification
+  // A caller-controlled user agent must not create a fresh rate-limit bucket.
   const identifier = getClientIdentifier(req);
   const key = createHash('sha256').update(identifier).digest('hex');
   const rateData = await incrementRateLimit(key, windowMs);
@@ -31,15 +36,15 @@ export async function checkRateLimit(req, maxRequests = 10, windowMs = 60000) {
  * Get client identifier from request
  */
 function getClientIdentifier(req) {
-  // Try to get real IP from various headers (Vercel specific)
-  const ip = req.headers['x-real-ip'] ||
-             req.headers['x-forwarded-for']?.split(',')[0] ||
-             req.socket?.remoteAddress ||
-             'unknown';
-
-  // Combine with user agent for better uniqueness
-  const userAgent = req.headers['user-agent'] || 'unknown';
-  return `${ip}:${userAgent.substring(0, 50)}`;
+  // Express resolves req.ip using the server's configured proxy trust policy.
+  if (req.ip) return req.ip;
+  // Vercel replaces this header at its edge. Direct Node requests must use the
+  // socket address rather than trusting arbitrary forwarding headers.
+  if (process.env.VERCEL === '1') {
+    const forwarded = req.headers['x-forwarded-for'];
+    if (typeof forwarded === 'string' && forwarded.trim()) return forwarded.split(',')[0].trim();
+  }
+  return req.socket?.remoteAddress || 'unknown';
 }
 
 /**
