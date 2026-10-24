@@ -38,6 +38,12 @@ Persistent Redis storage is required in production so secrets, view counters, an
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for instructions on deploying to a traditional VPS with Nginx and PM2.
 
+For the Node server, set `TRUSTED_PROXIES` to the comma-separated addresses or
+CIDRs of the reverse proxies that actually connect to it (for example `loopback`
+for a local Nginx proxy). Forwarding headers are ignored by default. Avoid an
+unrestricted proxy range: client rate limits rely on this trust boundary.
+Vercel Functions use Vercel's edge-managed client address independently.
+
 ## Local Development
 
 ### Prerequisites
