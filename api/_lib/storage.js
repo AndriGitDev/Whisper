@@ -73,6 +73,8 @@ export async function consumeSecret(id) {
 }
 
 const developmentRateLimits = new Map();
+const MAX_DEVELOPMENT_RATE_KEYS = 10000;
+let nextDevelopmentRateSweepAt = 0;
 
 export async function incrementRateLimit(key, windowMs) {
   if (redis) {
@@ -91,6 +93,19 @@ export async function incrementRateLimit(key, windowMs) {
   const now = Date.now();
   const current = developmentRateLimits.get(key);
   if (!current || now >= current.resetAt) {
+    if (!current && developmentRateLimits.size >= MAX_DEVELOPMENT_RATE_KEYS) {
+      // Bound fallback storage and sweep at most once/second under a key flood.
+      if (now >= nextDevelopmentRateSweepAt) {
+        for (const [storedKey, value] of developmentRateLimits) {
+          if (now >= value.resetAt) developmentRateLimits.delete(storedKey);
+        }
+        nextDevelopmentRateSweepAt = now + 1000;
+      }
+      if (developmentRateLimits.size >= MAX_DEVELOPMENT_RATE_KEYS) {
+        // Preserve active buckets instead of evicting them and resetting quotas.
+        return { count: Number.MAX_SAFE_INTEGER, ttlMs: 1000 };
+      }
+    }
     developmentRateLimits.set(key, { count: 1, resetAt: now + windowMs });
     return { count: 1, ttlMs: windowMs };
   }
