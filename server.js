@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import secretHandler from './api/secret.js';
 import secretByIdHandler from './api/secret/[id].js';
 import healthHandler from './api/health.js';
-import { trustedProxyPolicy } from './api/_lib/security.js';
+import { navigationRateLimit, trustedProxyPolicy } from './api/_lib/security.js';
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -47,7 +47,7 @@ app.use(express.static(dist, {
   },
 }));
 
-app.use((req, res, next) => {
+app.use(navigationRateLimit(), (req, res, next) => {
   if (req.method !== 'GET' || req.path.startsWith('/api/')) return next();
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   return res.sendFile(path.join(dist, 'index.html'));

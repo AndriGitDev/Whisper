@@ -38,6 +38,17 @@ Persistent Redis storage is required in production so secrets, view counters, an
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for instructions on deploying to a traditional VPS with Nginx and PM2.
 
+The Node server limits SPA document navigation to120 requests per minute per
+trusted client, independently of the existing10/minute creation and20/minute
+retrieval budgets. Static assets and `/api/health` do not consume navigation
+quota. Excess navigation returns429 with `Retry-After`; limiter failures return
+503 rather than serving documents without a limit. Production SPA navigation
+requires configured shared Redis and returns503 when that configuration is
+missing. Redis buckets expire after their window. Existing API rate-limit
+behavior and key hashes are preserved. The bounded in-memory fallback holds
+at most10,000 active keys and refuses new keys when full rather than resetting
+existing quotas.
+
 For the Node server, set `TRUSTED_PROXIES` to the comma-separated addresses or
 CIDRs of the reverse proxies that actually connect to it (for example `loopback`
 for a local Nginx proxy). Forwarding headers are ignored by default. Avoid an

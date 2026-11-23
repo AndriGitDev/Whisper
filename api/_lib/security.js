@@ -1,7 +1,7 @@
 // Security middleware for API endpoints
 
 import { createHash } from 'node:crypto';
-import { incrementRateLimit } from './storage.js';
+import { incrementRateLimit, isPersistentStorageConfigured } from './storage.js';
 
 export function trustedProxyPolicy(env = process.env) {
   const proxies = (env.TRUSTED_PROXIES || '').split(',').map(value => value.trim()).filter(Boolean);
@@ -15,10 +15,12 @@ export function trustedProxyPolicy(env = process.env) {
  * @param {number} windowMs - Time window in milliseconds
  * @returns {Object|null} - Returns error response if rate limited, null otherwise
  */
-export async function checkRateLimit(req, maxRequests = 10, windowMs = 60000) {
+export async function checkRateLimit(req, maxRequests = 10, windowMs = 60000, namespace = '') {
   // A caller-controlled user agent must not create a fresh rate-limit bucket.
   const identifier = getClientIdentifier(req);
-  const key = createHash('sha256').update(identifier).digest('hex');
+  // Preserve existing API buckets; navigation must not consume their quota.
+  const scopedIdentifier = namespace ? `${namespace}\0${identifier}` : identifier;
+  const key = createHash('sha256').update(scopedIdentifier).digest('hex');
   const rateData = await incrementRateLimit(key, windowMs);
   if (rateData.count > maxRequests) {
     // Rate limit exceeded
@@ -30,6 +32,35 @@ export async function checkRateLimit(req, maxRequests = 10, windowMs = 60000) {
   }
 
   return null;
+}
+
+/**
+ * Bound fixed SPA document requests without charging API or static-asset quotas.
+ * Mount after express.static and API handlers. Proxy identity is resolved by the
+ * same trusted-client policy as the existing API limits.
+ */
+export function navigationRateLimit({ maxRequests = 120, windowMs = 60000 } = {}) {
+  return async function limitNavigation(req, res, next) {
+    if (req.method !== 'GET' || req.path.startsWith('/api/')) return next();
+    try {
+      if (process.env.NODE_ENV === 'production' && !isPersistentStorageConfigured()) {
+        throw new Error('Shared navigation rate limiting is not configured');
+      }
+      const limited = await checkRateLimit(req, maxRequests, windowMs, 'navigation');
+      if (limited) {
+        res.setHeader('Retry-After', String(limited.retryAfter));
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(429).json(limited);
+      }
+      return next();
+    } catch {
+      // Do not turn a Redis/limiter outage into unlimited document serving or
+      // disclose backend exception details in the response.
+      res.setHeader('Retry-After', '60');
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(503).json({ error: 'Navigation rate limiting unavailable' });
+    }
+  };
 }
 
 /**
